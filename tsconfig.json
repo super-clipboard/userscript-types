@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "lib": ["ES2023", "DOM"],
+    "types": ["utools-api-types"]
+  },
+  "include": ["index.d.ts", "reference.d.ts"]
+}

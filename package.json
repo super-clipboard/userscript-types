@@ -1,0 +1,39 @@
+{
+  "name": "@super-clipboard/userscript-types",
+  "version": "0.1.0",
+  "description": "TypeScript type definitions for SuperClipboard userscript developers (utools.* + globalNativeApi.*).",
+  "homepage": "https://github.com/super-clipboard/userscript-types",
+  "bugs": {
+    "url": "https://github.com/super-clipboard/userscript-types/issues"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/super-clipboard/userscript-types.git"
+  },
+  "files": [
+    "index.d.ts",
+    "reference.d.ts",
+    "README.md"
+  ],
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts"
+    },
+    "./reference": "./reference.d.ts",
+    "./package.json": "./package.json"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "utools-api-types": "^7.5.1"
+  },
+  "peerDependencies": {
+    "utools-api-types": "^7.5.1"
+  },
+  "peerDependenciesMeta": {
+    "utools-api-types": {
+      "optional": false
+    }
+  }
+}
