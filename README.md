@@ -1,21 +1,22 @@
 # @super-clipboard/userscript-types
 
-> TypeScript 类型定义包，面向 SuperClipboard 自定义脚本开发者。
+> English ｜ [简体中文](./README.zh-CN.md)
 
-提供 `GM_*` API 的类型声明，覆盖 SuperClipboard 实现的全部 Tampermonkey 兼容 API
-子集，并补充 SuperClipboard 独有的剪贴板 / Popover / 元数据相关 API。
+TypeScript type definitions for [SuperClipboard](https://github.com/super-clipboard) user-script developers.
 
-## 安装
+Provides type declarations for the `GM_*` API surface — covering the Tampermonkey-compatible subset implemented by SuperClipboard, plus SuperClipboard-specific clipboard / popover / metadata APIs.
+
+## Install
 
 ```bash
 pnpm add -D @super-clipboard/userscript-types
-# 同时建议安装 Tampermonkey 类型作为对照（可选）
+# Optional: install the upstream Tampermonkey types as a reference
 pnpm add -D @types/tampermonkey
 ```
 
-## 启用
+## Enable
 
-方式 1 — 三斜线引用：
+Option 1 — triple-slash reference:
 
 ```ts
 /// <reference types="@super-clipboard/userscript-types" />
@@ -25,7 +26,7 @@ GM_registerMenuCommand("Hi", async (ctx) => {
 });
 ```
 
-方式 2 — `tsconfig.json`：
+Option 2 — `tsconfig.json`:
 
 ```json
 {
@@ -35,10 +36,14 @@ GM_registerMenuCommand("Hi", async (ctx) => {
 }
 ```
 
-## 与 Tampermonkey 的关系
+## Relationship to Tampermonkey
 
-- API 命名一致（`GM_xmlhttpRequest`、`GM_setValue` 等），便于熟悉 Tampermonkey 的开发者上手
-- **API 行为以本包类型为准**，例如 `GM_xmlhttpRequest` 返回 `Promise<XhrResponse>`，且仅放行 `@connect` 白名单中的域名
-- SuperClipboard 独有 API 以 `GM_addClipboardListener` / `GM_setClipMetadata` / `GM_showPopover` 等命名
+- API names match Tampermonkey (`GM_xmlhttpRequest`, `GM_setValue`, …) so existing user-script developers feel at home.
+- **Behaviour follows this package's types** when they diverge — for example `GM_xmlhttpRequest` returns `Promise<XhrResponse>` and only allows hosts in the `@connect` allow-list.
+- SuperClipboard-only APIs use prefixes such as `GM_addClipboardListener`, `GM_setClipMetadata`, `GM_showPopover`.
 
-详见仓库 `docs/arch-plan/18-custom-actions-api.md`。
+See `docs/arch-plan/18-custom-actions-api.md` in the main repo for the full design.
+
+## License
+
+MIT
