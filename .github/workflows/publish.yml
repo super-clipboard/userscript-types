@@ -21,19 +21,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org/
           scope: "@super-clipboard"
-
-      # npm --provenance is supported since npm 9.5.0.
-      # Node 22 ships with npm 10.x which already supports trusted-publisher OIDC
-      # publishing out of the box — no explicit upgrade step needed.
-      # Configure trusted publisher at:
-      #   https://www.npmjs.com/package/@super-clipboard/userscript-types/access
 
       - name: Verify package version matches tag
         if: startsWith(github.ref, 'refs/tags/v')
