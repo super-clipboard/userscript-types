@@ -1,6 +1,6 @@
 {
   "name": "@super-clipboard/userscript-types",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "TypeScript type definitions for SuperClipboard userscript developers (utools.* + globalNativeApi.*).",
   "homepage": "https://github.com/super-clipboard/userscript-types",
   "bugs": {
@@ -14,6 +14,7 @@
   "files": [
     "index.d.ts",
     "reference.d.ts",
+    "spec.d.ts",
     "README.md"
   ],
   "types": "./index.d.ts",
@@ -22,6 +23,9 @@
       "types": "./index.d.ts"
     },
     "./reference": "./reference.d.ts",
+    "./spec": {
+      "types": "./spec.d.ts"
+    },
     "./package.json": "./package.json"
   },
   "devDependencies": {
