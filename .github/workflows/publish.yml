@@ -29,13 +29,11 @@ jobs:
           registry-url: https://registry.npmjs.org/
           scope: "@super-clipboard"
 
-      # npm's native OIDC trusted-publisher flow requires npm CLI >= 11.5.1.
-      # Node 22 ships an older bundled npm; upgrade explicitly so `npm publish`
-      # exchanges GitHub OIDC tokens for an npm publish token automatically
-      # (no NPM_TOKEN secret needed). Configure trusted publisher at:
+      # npm --provenance is supported since npm 9.5.0.
+      # Node 22 ships with npm 10.x which already supports trusted-publisher OIDC
+      # publishing out of the box — no explicit upgrade step needed.
+      # Configure trusted publisher at:
       #   https://www.npmjs.com/package/@super-clipboard/userscript-types/access
-      - name: Upgrade npm to OIDC-capable release
-        run: npm install -g npm@latest
 
       - name: Verify package version matches tag
         if: startsWith(github.ref, 'refs/tags/v')
