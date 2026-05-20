@@ -382,8 +382,16 @@ export namespace SuperClipboard {
     description?: string;
     author?: string;
     runAt: "foreground" | "background";
-    /** Tokens granted via `@grant`; see project docs for the two coarse scopes. */
-    grants: ("utools.*" | "globalNativeApi.*")[];
+    /**
+     * Tokens declared via `@grant`, as authored by the script.
+     *
+     * Each entry has the shape `<namespace>.<method-or-wildcard>` where
+     * `<namespace>` is `"utools"` or `"globalNativeApi"`. Fine-grained tokens
+     * (e.g. `"utools.copyText"`, `"globalNativeApi.notification"`) are
+     * recommended; the coarse wildcards `"utools.*"` / `"globalNativeApi.*"`
+     * are also accepted but subject to a denylist enforced by the host.
+     */
+    grants: string[];
   }
 
   // ── globalNativeApi shape ────────────────────────────────────────────
