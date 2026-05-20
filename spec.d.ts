@@ -309,6 +309,8 @@ export namespace SuperClipboard {
     filename: string;
     /** MIME type hint, e.g. `"image/png"` or `"text/plain"`. */
     mime?: string;
+    /** Optional target directory path to write directly in supported Node environments. */
+    targetDir?: string;
   }
 
   type SaveFileContent = string | Uint8Array | ArrayBuffer;
@@ -585,6 +587,12 @@ export namespace SuperClipboard {
      * ```
      */
     saveFile(content: SaveFileContent, options: SaveFileOptions): Promise<void>;
+
+    /**
+     * Copy a local file or directory to a different path on disk in supported Node environments.
+     * Recursively copies directories.
+     */
+    copyLocalFile(srcPath: string, destPath: string): Promise<void>;
 
     /**
      * Show the script's iframe as a floating panel. The iframe itself is the
