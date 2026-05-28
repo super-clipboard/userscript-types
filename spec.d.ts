@@ -514,16 +514,42 @@ export namespace SuperClipboard {
     getClipBody(clip: ClipRef): Promise<ClipBodyContent | null>;
 
     /**
-     * Merge `partial` into the clip's `scriptData[<your @namespace>]`. The
+     * Merge `partial` into the clip's per-script metadata bag (isolated by
+     * the script's frozen install identity, *not* by `@namespace`). The
      * write is shallow-merged; pass an explicit `null` value to clear a
      * particular key in a follow-up write.
      *
+     * @deprecated Prefer a dedicated host API for the field you need.
+     *   For OCR text, use {@link setClipOcrText} — it writes to the shared
+     *   `ocr/{hash}` document the host uses for image text search, so the
+     *   result is visible across scripts and survives uninstall.
+     *   `setClipMetadata` remains for ad-hoc per-script annotations.
+     *
      * @example
      * ```ts
-     * await globalNativeApi.setClipMetadata(ref, { ocrText: "hello world" });
+     * await globalNativeApi.setClipMetadata(ref, { tag: "important" });
      * ```
      */
     setClipMetadata(clip: ClipRef, partial: Record<string, unknown>): Promise<void>;
+
+    /**
+     * Persist OCR text for an image clip identified by its content hash.
+     *
+     * Unlike {@link setClipMetadata} this writes to the host's dedicated
+     * `ocr/{hash}` document, the same store consumed by the built-in image
+     * text search. The text is content-addressed (keyed by `hash`), so all
+     * clips that share the same image bytes see the same OCR result.
+     *
+     * @param hash Content hash of the image clip (e.g. `clip.hash`).
+     * @param ocrText The recognised text. Pass an empty string to record a
+     *   negative result (suppresses subsequent re-runs).
+     *
+     * @example
+     * ```ts
+     * await globalNativeApi.setClipOcrText(clip.hash, "hello world");
+     * ```
+     */
+    setClipOcrText(hash: string, ocrText: string): Promise<void>;
 
     // —— KV（按 @namespace 隔离） ———————————————————————————————
 
