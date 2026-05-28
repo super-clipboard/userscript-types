@@ -54,7 +54,7 @@ const id = globalNativeApi.registerMenuCommand("复制为链接", async (ctx) =>
 ```ts
 // 订阅剪贴板事件
 globalNativeApi.addClipboardListener("added", (e) => {
-  globalNativeApi.log("captured", e.type, e.hash);
+  console.log("captured", e.type, e.hash);
 });
 
 // 读取剪贴项正文（按 `type` 区分的标签联合）

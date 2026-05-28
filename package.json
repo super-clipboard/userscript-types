@@ -1,6 +1,6 @@
 {
   "name": "@super-clipboard/userscript-types",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "TypeScript type definitions for SuperClipboard userscript developers (utools.* + globalNativeApi.*).",
   "homepage": "https://github.com/super-clipboard/userscript-types",
   "bugs": {

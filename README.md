@@ -54,7 +54,7 @@ the global scope. They also pull in
 ```ts
 // Subscribe to clipboard events
 globalNativeApi.addClipboardListener("added", (e) => {
-  globalNativeApi.log("captured", e.type, e.hash);
+  console.log("captured", e.type, e.hash);
 });
 
 // Read clip bodies (tagged union by `type`)

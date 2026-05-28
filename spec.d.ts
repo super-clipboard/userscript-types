@@ -447,7 +447,7 @@ export namespace SuperClipboard {
      * @example
      * ```ts
      * const onAdded = (e: SuperClipboard.ClipboardAddedEvent) => {
-     *   globalNativeApi.log("captured", e.type, e.hash);
+     *   console.log("captured", e.type, e.hash);
      * };
      * globalNativeApi.addClipboardListener("added", onAdded);
      * // …later
@@ -594,16 +594,24 @@ export namespace SuperClipboard {
     notification(options: NotificationOptions | string): Promise<void>;
 
     /**
+     * @deprecated 请改用 `console.log(...)`。宿主已统一拦截脚本沙箱中的
+     *   `console.log/warn/error`，自动加上 `[script:<name>] [console]` 前缀
+     *   写入应用主日志（`utools.getPath('logs')/super-clipboard-next/...`），
+     *   并显示在设置 → 脚本 → 调试日志面板。后续版本会移除该入口。
+     *
      * Synchronous logger forwarded to the host's developer console with a
-     * `[script:<namespace>]` prefix. Prefer this over `console.log` so output
-     * is attributed to your script.
+     * `[script:<name>] [gm]` prefix.
      */
     log(...args: unknown[]): void;
 
-    /** Warning-level counterpart to {@link log}. */
+    /**
+     * @deprecated 请改用 `console.warn(...)`。理由同 {@link log}。
+     */
     warn(...args: unknown[]): void;
 
-    /** Error-level counterpart to {@link log}. */
+    /**
+     * @deprecated 请改用 `console.error(...)`。理由同 {@link log}。
+     */
     error(...args: unknown[]): void;
 
     /**
