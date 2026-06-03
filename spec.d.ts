@@ -118,7 +118,8 @@ export namespace SuperClipboard {
    * Metadata associated with a clip. Carried inside {@link ClipboardAddedEvent}
    * and other clip-related payloads.
    *
-   * `scriptData` is a free-form bag keyed by script `@namespace`; use
+   * `scriptData` is a free-form bag keyed by script identity (install URL
+   * derived shorthash); use
    * {@link GlobalNativeApi.setClipMetadata} to write into your own namespace.
    *
    * @example
@@ -150,7 +151,7 @@ export namespace SuperClipboard {
     size?: number;
     /** Internal id of the body record, format: `clip-body/<hash>`. */
     bodyId?: string;
-    /** Aggregated namespace -> data map populated by background scripts. */
+    /** Aggregated identity -> data map populated by background scripts. */
     scriptData?: Record<string, Record<string, unknown>>;
   }
 
@@ -252,6 +253,40 @@ export namespace SuperClipboard {
     clips: readonly ClipRef[];
   }
 
+  /**
+   * Extended context passed to a {@link MenuCommandOptions.matcher} predicate.
+   *
+   * Superset of {@link MenuCallbackContext} with a synchronously-available
+   * `bodies` map keyed by `ClipRef.hash`. Only `text`/`link`/`html` and
+   * `file` clip bodies are populated; `image` bodies are intentionally absent
+   * (their byte content would require async disk I/O and would block the
+   * synchronous right-click menu path).
+   *
+   * **Missing keys**: if a hash is absent from `bodies`, the body is not in
+   * the in-memory cache (e.g. during cold start). Matchers should fall back
+   * to type-only judgement and return `true` (be permissive) in that case.
+   *
+   * **Restrictions**: matchers MUST be synchronous pure functions — no
+   * `async`/`await`, no closure variables outside `ctx`, no side effects.
+   * Violations are rejected at registration time.
+   */
+  interface MenuMatcherContext {
+    /** Same as {@link MenuCallbackContext.trigger}. */
+    trigger?: ClipRef;
+    /** Same as {@link MenuCallbackContext.clips}. */
+    clips: readonly ClipRef[];
+    /**
+     * Synchronously-available clip bodies, keyed by `ClipRef.hash`.
+     *
+     * - `text` / `link` / `html` → {@link ClipTextBody} (with `text` / `preview`)
+     * - `file` → {@link ClipFileBody} (with `files` metadata, no byte content)
+     * - `image` → **never present** (bytes require async disk I/O)
+     *
+     * Missing key = body not in cache; fall back to type-only judgement.
+     */
+    bodies: ReadonlyMap<string, ClipTextBody | ClipFileBody>;
+  }
+
   type MenuCommandCallback = (ctx: MenuCallbackContext) => void | Promise<void>;
 
   /**
@@ -260,14 +295,51 @@ export namespace SuperClipboard {
    * @example
    * ```ts
    * globalNativeApi.registerMenuCommand("Decode QR", onDecode, {
-   *   matchClip: ["image"],
+   *   matcher: (ctx) => ctx.clips.length === 1 && ctx.clips[0].type === "image",
    *   accessKey: "Q",
    * });
    * ```
    */
   interface MenuCommandOptions {
-    /** Restrict visibility to specific clip kinds. Overrides `@match-clip`. */
+    /**
+     * @deprecated Use `@match-clip` (script-level header) for type-based
+     * filtering and `options.matcher` for command-level conditions instead.
+     * Command-level `matchClip` duplicates the script-level `@match-clip`
+     * directive and will be removed in a future version.
+     */
     matchClip?: ClipKind[];
+    /**
+     * Synchronous predicate gating menu visibility for this command.
+     *
+     * Runs **after** the script-level `@match-clip` has already accepted the
+     * current selection. Must be a pure synchronous function — `async`,
+     * `await`, references to closure variables outside `ctx`, and side effects
+     * are forbidden and will fail registration.
+     *
+     * Input is limited: `ctx.bodies` only contains text/link/html/file bodies
+     * that are synchronously available in the host's in-memory cache. Image
+     * bytes, database queries, and network I/O are NOT accessible from a
+     * matcher — perform those checks inside the command callback and exit
+     * early via {@link GlobalNativeApi.notification} if unsuitable.
+     *
+     * For type-only filtering, prefer the script-level `@match-clip` directive
+     * over expressing the same intent here.
+     *
+     * @example
+     * ```ts
+     * // Show only when exactly one URL-shaped text clip is selected.
+     * globalNativeApi.registerMenuCommand("Open in browser", onOpen, {
+     *   matcher: (ctx) => {
+     *     if (ctx.clips.length !== 1) return false;
+     *     const c = ctx.clips[0];
+     *     if (c.type !== "text") return false;
+     *     const text = ctx.bodies.get(c.hash)?.text ?? "";
+     *     return /^https?:\/\//i.test(text);
+     *   },
+     * });
+     * ```
+     */
+    matcher?: (ctx: MenuMatcherContext) => boolean;
     /** Single-character access key shown in the menu. */
     accessKey?: string;
   }
@@ -377,6 +449,7 @@ export namespace SuperClipboard {
     /** Stable id (`config/script/<sha1-16hex>`). */
     scriptId: string;
     name: string;
+    /** Optional; the system no longer uses this for identity/isolation. */
     namespace: string;
     version: string;
     description?: string;
@@ -415,7 +488,7 @@ export namespace SuperClipboard {
      *
      * @param name     Display name shown in the menu.
      * @param callback Invoked when the user picks the command.
-     * @param options  Optional kind filter / access key.
+     * @param options  Optional matcher / access key.
      * @returns        Opaque command id (not stable across reloads).
      *
      * @example
@@ -515,7 +588,7 @@ export namespace SuperClipboard {
 
     /**
      * Merge `partial` into the clip's per-script metadata bag (isolated by
-     * the script's frozen install identity, *not* by `@namespace`). The
+     * the script's frozen install identity (v0.5+). The
      * write is shallow-merged; pass an explicit `null` value to clear a
      * particular key in a follow-up write.
      *
@@ -551,10 +624,13 @@ export namespace SuperClipboard {
      */
     setClipOcrText(hash: string, ocrText: string): Promise<void>;
 
-    // —— KV（按 @namespace 隔离） ———————————————————————————————
+    // —— KV（按 scriptId 隔离） ———————————————————————————————
 
     /**
-     * Persistent key-value store, isolated per script `@namespace`.
+     * Persistent key-value store, isolated per script identity.
+     *
+     * @remarks The isolation key is the script's document id (a shorthash
+     * of its frozen install URL), not the legacy `@namespace`.
      * Values are JSON-serialised; pass anything `JSON.stringify` accepts.
      *
      * @example
@@ -574,7 +650,7 @@ export namespace SuperClipboard {
     /** Remove a key. No-op when the key is unset. */
     deleteValue(key: string): Promise<void>;
 
-    /** Enumerate all keys in this script's namespace. */
+    /** Enumerate all keys in this script's identity scope. */
     listValues(): Promise<string[]>;
 
     // —— 输出 / IO ———————————————————————————————————————————
