@@ -15,7 +15,8 @@
     "index.d.ts",
     "reference.d.ts",
     "spec.d.ts",
-    "README.md"
+    "README.md",
+    "resources/"
   ],
   "types": "./index.d.ts",
   "exports": {
