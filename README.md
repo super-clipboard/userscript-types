@@ -66,7 +66,7 @@ await globalNativeApi.setValue("count", 1);
 const count = await globalNativeApi.getValue<number>("count");
 
 // Notifications & file save
-await globalNativeApi.notification({ title: "Done", body: "Synced." });
+await globalNativeApi.toast({ title: "Done", body: "Synced." });
 await globalNativeApi.saveFile({ filename: "clip.txt", content: body.text! });
 
 // Mount an HTML panel (anchored / centered / docked)

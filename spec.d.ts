@@ -185,34 +185,6 @@ export namespace SuperClipboard {
     file: ClipboardAddedEvent;
   }
 
-  /**
-   * Channel-name → payload map for {@link GlobalNativeApi.addAppListener}.
-   *
-   * **Reserved for future use.** The runtime exposes this listener API but
-   * the host currently emits no `app:*` events. Subscribing today is a no-op.
-   */
-  interface AppEventMap {
-    /** Reserved. Will fire after host startup completes. */
-    ready: Record<string, never>;
-    /** Reserved. Will fire when the main window becomes visible. */
-    visible: Record<string, never>;
-    /** Reserved. Will fire when the main window is hidden. */
-    hidden: Record<string, never>;
-  }
-
-  /**
-   * Channel-name → payload map for {@link GlobalNativeApi.addPanelListener}.
-   *
-   * **Reserved for future use.** The runtime exposes this listener API but
-   * the host currently emits no `panel:*` events. Subscribing today is a no-op.
-   */
-  interface PanelEventMap {
-    /** Reserved. Will fire when the panel is closed (by user or `closePanel()`). */
-    closed: Record<string, never>;
-    /** Reserved. Will fire when the panel size changes. */
-    resize: { width: number; height: number };
-  }
-
   // ── Menu commands ─────────────────────────────────────────────────────
 
   /**
@@ -290,24 +262,16 @@ export namespace SuperClipboard {
   type MenuCommandCallback = (ctx: MenuCallbackContext) => void | Promise<void>;
 
   /**
-   * Per-command options. Defaults to "show on every kind, no access key".
+   * Per-command options. Defaults to "show on every kind".
    *
    * @example
    * ```ts
    * globalNativeApi.registerMenuCommand("Decode QR", onDecode, {
    *   matcher: (ctx) => ctx.clips.length === 1 && ctx.clips[0].type === "image",
-   *   accessKey: "Q",
    * });
    * ```
    */
   interface MenuCommandOptions {
-    /**
-     * @deprecated Use `@match-clip` (script-level header) for type-based
-     * filtering and `options.matcher` for command-level conditions instead.
-     * Command-level `matchClip` duplicates the script-level `@match-clip`
-     * directive and will be removed in a future version.
-     */
-    matchClip?: ClipKind[];
     /**
      * Synchronous predicate gating menu visibility for this command.
      *
@@ -320,7 +284,7 @@ export namespace SuperClipboard {
      * that are synchronously available in the host's in-memory cache. Image
      * bytes, database queries, and network I/O are NOT accessible from a
      * matcher — perform those checks inside the command callback and exit
-     * early via {@link GlobalNativeApi.notification} if unsuitable.
+     * early via {@link GlobalNativeApi.toast} if unsuitable.
      *
      * For type-only filtering, prefer the script-level `@match-clip` directive
      * over expressing the same intent here.
@@ -340,30 +304,30 @@ export namespace SuperClipboard {
      * ```
      */
     matcher?: (ctx: MenuMatcherContext) => boolean;
-    /** Single-character access key shown in the menu. */
-    accessKey?: string;
   }
 
-  // ── Notifications ─────────────────────────────────────────────────────
+  // ── In-app toast ──────────────────────────────────────────────────────
 
   /**
-   * Options for {@link GlobalNativeApi.notification}. All fields are
-   * best-effort and may be ignored on some platforms.
+   * Options for {@link GlobalNativeApi.toast}. All fields are best-effort.
    *
    * The host also accepts a bare string at the call site, equivalent to
    * `{ body: <string> }`.
    *
+   * The host renders this via its built-in toast UI; this is **not** a Web
+   * `Notification` or OS-level notification.
+   *
    * @example
    * ```ts
-   * await globalNativeApi.notification({
+   * await globalNativeApi.toast({
    *   title: "Done",
    *   body: "Saved to ~/Downloads/clip.png",
    *   timeoutMs: 4000,
    * });
-   * await globalNativeApi.notification("Saved!"); // body shorthand
+   * await globalNativeApi.toast("Saved!"); // body shorthand
    * ```
    */
-  interface NotificationOptions {
+  interface ToastOptions {
     title?: string;
     body?: string;
     /** Auto-dismiss after this many milliseconds. Platform default if omitted. */
@@ -460,7 +424,7 @@ export namespace SuperClipboard {
      *
      * Each entry has the shape `<namespace>.<method-or-wildcard>` where
      * `<namespace>` is `"utools"` or `"globalNativeApi"`. Fine-grained tokens
-     * (e.g. `"utools.copyText"`, `"globalNativeApi.notification"`) are
+     * (e.g. `"utools.copyText"`, `"globalNativeApi.toast"`) are
      * recommended; the coarse wildcards `"utools.*"` / `"globalNativeApi.*"`
      * are also accepted but subject to a denylist enforced by the host.
      */
@@ -536,36 +500,6 @@ export namespace SuperClipboard {
     removeClipboardListener<K extends keyof ClipboardEventMap>(
       event: K,
       handler: (payload: ClipboardEventMap[K]) => void | Promise<void>,
-    ): void;
-
-    /**
-     * Subscribe to host application lifecycle events.
-     *
-     * @example
-     * ```ts
-     * globalNativeApi.addAppListener("visible", () => {
-     *   // refresh a panel each time the user opens the window
-     * });
-     * ```
-     */
-    addAppListener<K extends keyof AppEventMap>(
-      event: K,
-      handler: (payload: AppEventMap[K]) => void | Promise<void>,
-    ): void;
-
-    /**
-     * Subscribe to events for the script's own panel (see {@link showPanel}).
-     *
-     * @example
-     * ```ts
-     * globalNativeApi.addPanelListener("closed", () => {
-     *   // commit pending edits
-     * });
-     * ```
-     */
-    addPanelListener<K extends keyof PanelEventMap>(
-      event: K,
-      handler: (payload: PanelEventMap[K]) => void | Promise<void>,
     ): void;
 
     // —— 数据访问 ———————————————————————————————————————————
@@ -656,39 +590,19 @@ export namespace SuperClipboard {
     // —— 输出 / IO ———————————————————————————————————————————
 
     /**
-     * Show a system notification.
+     * Show an in-app toast message. The host renders it via its built-in
+     * toast UI; this is **not** a Web `Notification` or OS-level notification.
      *
-     * Accepts either a {@link NotificationOptions} object or a bare string
+     * Accepts either a {@link ToastOptions} object or a bare string
      * (treated as `{ body: <string> }`).
      *
      * @example
      * ```ts
-     * await globalNativeApi.notification({ title: "Saved", body: "1 file written" });
-     * await globalNativeApi.notification("Saved!"); // body shorthand
+     * await globalNativeApi.toast({ title: "Saved", body: "1 file written" });
+     * await globalNativeApi.toast("Saved!"); // body shorthand
      * ```
      */
-    notification(options: NotificationOptions | string): Promise<void>;
-
-    /**
-     * @deprecated 请改用 `console.log(...)`。宿主已统一拦截脚本沙箱中的
-     *   `console.log/warn/error`，自动加上 `[script:<name>] [console]` 前缀
-     *   写入应用主日志（`utools.getPath('logs')/super-clipboard-next/...`），
-     *   并显示在设置 → 脚本 → 调试日志面板。后续版本会移除该入口。
-     *
-     * Synchronous logger forwarded to the host's developer console with a
-     * `[script:<name>] [gm]` prefix.
-     */
-    log(...args: unknown[]): void;
-
-    /**
-     * @deprecated 请改用 `console.warn(...)`。理由同 {@link log}。
-     */
-    warn(...args: unknown[]): void;
-
-    /**
-     * @deprecated 请改用 `console.error(...)`。理由同 {@link log}。
-     */
-    error(...args: unknown[]): void;
+    toast(options: ToastOptions | string): Promise<void>;
 
     /**
      * Save `content` as a file. The host currently triggers a browser-style

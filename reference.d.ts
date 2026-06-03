@@ -59,12 +59,10 @@ declare global {
     export type ClipMeta = Spec.ClipMeta;
     export type ClipboardAddedEvent = Spec.ClipboardAddedEvent;
     export type ClipboardEventMap = Spec.ClipboardEventMap;
-    export type AppEventMap = Spec.AppEventMap;
-    export type PanelEventMap = Spec.PanelEventMap;
     export type MenuCallbackContext = Spec.MenuCallbackContext;
     export type MenuCommandCallback = Spec.MenuCommandCallback;
     export type MenuCommandOptions = Spec.MenuCommandOptions;
-    export type NotificationOptions = Spec.NotificationOptions;
+    export type ToastOptions = Spec.ToastOptions;
     export type SaveFileOptions = Spec.SaveFileOptions;
     export type SaveFileContent = Spec.SaveFileContent;
     export type PanelPlacement = Spec.PanelPlacement;

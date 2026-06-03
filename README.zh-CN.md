@@ -65,8 +65,8 @@ if (body?.type === "image") console.log(body.bytes?.byteLength);
 await globalNativeApi.setValue("count", 1);
 const count = await globalNativeApi.getValue<number>("count");
 
-// 通知与文件保存
-await globalNativeApi.notification({ title: "完成", body: "已同步" });
+// 应用内提示与文件保存
+await globalNativeApi.toast({ title: "完成", body: "已同步" });
 await globalNativeApi.saveFile({ filename: "clip.txt", content: body.text! });
 
 // 挂载 HTML 面板（锚定 / 居中 / 停靠）
